@@ -1,6 +1,11 @@
 from pydantic_settings import BaseSettings
+from pydantic import Field
 from typing import Optional
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables"""
@@ -18,17 +23,17 @@ class Settings(BaseSettings):
     
     # Server Configuration
     host: str = "0.0.0.0"
-    port: int = 8000
+    port: int = 8001  # Updated to match our setup
     debug: bool = False
     
     # Job Configuration
-    max_panels: int = 6
-    min_panels: int = 2
+    max_panels: int = Field(default=6, env="MAX_PANELS")
+    min_panels: int = Field(default=2, env="MIN_PANELS")
     
     # Image Generation Settings
-    image_width: int = 800
-    image_height: int = 600
-    image_quality: str = "standard"
+    image_width: int = Field(default=1024, env="IMAGE_WIDTH")
+    image_height: int = Field(default=1024, env="IMAGE_HEIGHT")
+    image_quality: str = Field(default="standard", env="IMAGE_QUALITY")
     
     class Config:
         env_file = ".env"
@@ -39,4 +44,9 @@ settings = Settings()
 
 # Ensure output directories exist
 os.makedirs(settings.storage_dir, exist_ok=True)
-os.makedirs(settings.comic_output_dir, exist_ok=True) 
+os.makedirs(settings.comic_output_dir, exist_ok=True)
+
+# Validate OpenAI API key
+if not settings.openai_api_key:
+    # Try to get from environment variable
+    settings.openai_api_key = os.getenv("OPENAI_API_KEY") 

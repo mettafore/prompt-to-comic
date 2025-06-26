@@ -14,8 +14,8 @@ class GenerateResponse(BaseModel):
 class StatusResponse(BaseModel):
     state: str = Field(..., description="Job state: pending, processing, done, failed")
     message: Optional[str] = Field(None, description="Status message or error")
-    comic_url: Optional[str] = Field(None, description="URL to generated comic PNG")
-    pdf_url: Optional[str] = Field(None, description="URL to generated comic PDF")
+    comic_data: Optional[str] = Field(None, description="Base64 encoded comic image data")
+    panel_images: Optional[List[str]] = Field(None, description="List of base64 encoded panel images")
 
 class HealthResponse(BaseModel):
     status: str = Field(default="ok", description="Health check status")
@@ -45,22 +45,18 @@ class ImagePrompt(BaseModel):
     style: str = Field(..., description="Art style being used")
     negative_prompt: Optional[str] = Field(None, description="What to avoid in the image")
 
-class ImageFile(BaseModel):
-    """Generated image file information"""
+class ImageData(BaseModel):
+    """Generated image data"""
     panel_number: int = Field(..., description="Panel this image is for")
-    file_path: str = Field(..., description="Local path to the image file")
-    file_url: Optional[str] = Field(None, description="Public URL if available")
+    image_data: str = Field(..., description="Base64 encoded image data")
     width: int = Field(..., description="Image width in pixels")
     height: int = Field(..., description="Image height in pixels")
 
 class ComicOutput(BaseModel):
     """Final comic strip output"""
     job_id: str = Field(..., description="Job identifier")
-    panels: List[ImageFile] = Field(..., description="Generated panel images")
-    comic_png_path: str = Field(..., description="Path to assembled comic PNG")
-    comic_pdf_path: str = Field(..., description="Path to assembled comic PDF")
-    comic_png_url: Optional[str] = Field(None, description="Public URL to comic PNG")
-    comic_pdf_url: Optional[str] = Field(None, description="Public URL to comic PDF")
+    panels: List[ImageData] = Field(..., description="Generated panel images")
+    comic_data: str = Field(..., description="Base64 encoded assembled comic image")
 
 # Art Style Enum
 class ArtStyle(str, Enum):
