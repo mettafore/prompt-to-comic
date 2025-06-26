@@ -4,9 +4,22 @@
 
 ---
 
+## 🚀 Quick Start (One Command!)
+
+```bash
+# Clone and run with Docker (easiest way)
+git clone https://github.com/yourusername/prompt-to-comic
+cd prompt-to-comic
+docker-compose up --build
+```
+
+Then visit: **http://localhost:8501** 🎉
+
+---
+
 ## 📸 Demo
 ![demo-preview](static/demo.gif)  
-👉 Try it locally with a prompt like:
+👉 Try it with a prompt like:
 
 > "Two kids in a spaceship arguing about pineapple pizza while a robot watches."
 
@@ -34,50 +47,57 @@ Built using **LangGraph**, each stage is a reusable, testable node in a directed
 | Frontend     | **Streamlit**                       |
 | Image Models | DALL·E 3 / Replicate SDXL           |
 | Layout       | Pillow, ReportLab (PDFs)            |
-| Infra        | Docker, .env, HTTPX                 |
+| Infra        | Docker, uv, HTTPX                   |
 
 ---
 
-## 🚀 Quickstart
+## 🛠️ Setup Options
 
-### Prerequisites
-- Python 3.11+
-- OpenAI API key or Replicate key
-
-### 1. Clone and Install
+### Option 1: Docker Compose (Recommended)
 ```bash
-git clone https://github.com/your-org/prompt-to-comic
+git clone https://github.com/yourusername/prompt-to-comic
 cd prompt-to-comic
-cp .env.example .env  # fill in your keys
+docker-compose up --build
 ```
 
-### 2. Launch with Docker
+### Option 2: Local Development
 ```bash
-docker compose up --build
+# Backend
+cd backend
+uv sync
+uv run uvicorn app.main:app --reload
+
+# Frontend (new terminal)
+cd frontend  
+uv sync
+uv run streamlit run app.py
 ```
-Visit the Streamlit UI at: [http://localhost:8501](http://localhost:8501)
+
+### Option 3: Live Demo
+Visit: [your-railway-app.railway.app](https://your-railway-app.railway.app)
 
 ---
 
-## 🧩 LangGraph Pipeline (Backend)
+## 🔧 Configuration
 
-LangGraph runs the AI agent flow via nodes:
-```mermaid
-graph TD
-    A[User Prompt] --> B(SceneParser)
-    B --> C(PanelPlanner)
-    C --> D((loop panels))
-    D --> E(PromptGenerator)
-    E --> F(ImageGenerator)
-    F --> G[ComicLayout]
-    G --> H[Comic Output]
-```
+1. Copy the example environment file:
+   ```bash
+   cp .env.example .env
+   ```
 
-Each node lives in `app/graphs/nodes/` and uses simple, typed dataclasses.
+2. Add your OpenAI API key:
+   ```env
+   OPENAI_API_KEY=sk-your-key-here
+   ```
+
+3. Restart the services:
+   ```bash
+   docker-compose down && docker-compose up --build
+   ```
 
 ---
 
-## 🌐 API Endpoints (FastAPI)
+## 🌐 API Endpoints
 
 ### `POST /generate`
 Generate comic from prompt.
@@ -88,38 +108,12 @@ Generate comic from prompt.
   "panels": 3
 }
 ```
-Returns:
-```json
-{ "job_id": "xyz456" }
-```
 
 ### `GET /status/{job_id}`
-Poll job status and result URL:
-```json
-{
-  "state": "done",
-  "comic_url": "/comics/xyz456/comic.png",
-  "pdf_url": "/comics/xyz456/comic.pdf"
-}
-```
+Poll job status and result URL.
 
 ### `GET /health`
 Returns `{ "status": "ok" }`
-
----
-
-## 🖥️ Frontend UI (Streamlit)
-The user interface allows:
-- Entering a creative prompt
-- Choosing art style (Manga, Graphic Novel, Pixar, Noir)
-- Adjusting number of panels
-- Viewing comic
-- Downloading PDF
-
-Launch with:
-```bash
-streamlit run frontend/app.py
-```
 
 ---
 
@@ -139,31 +133,9 @@ prompt-to-comic/
 │   ├── api.py
 │   └── components/
 ├── static/
-├── tests/
-├── .env
-├── Dockerfile
-├── requirements.txt
+├── docker-compose.yml
+├── .env.example
 └── README.md
-```
-
----
-
-## 🧪 Testing
-```bash
-pytest tests/
-```
-Includes:
-- Unit tests for LangGraph nodes
-- API integration tests
-- Prompt snapshot regression
-
----
-
-## 🛠️ Configuration (.env)
-```
-OPENAI_API_KEY=sk-...
-IMAGE_API_URL=https://...
-STORAGE_DIR=./output
 ```
 
 ---
