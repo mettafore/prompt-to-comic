@@ -20,4 +20,11 @@ clean:
 venv:
 	uv venv
 
-.PHONY: install run format lint clean venv
+# Frontend Testing Targets
+ui:
+	curl "http://localhost:8501"
+
+health:
+	curl "http://localhost:8501/_stcore/health"
+
+.PHONY: install run format lint clean venv ui health
