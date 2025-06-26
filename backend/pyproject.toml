@@ -16,6 +16,7 @@ dependencies = [
     "reportlab",
     "python-multipart",
     "python-dotenv",
+    "aiohttp",
 ]
 
 [project.optional-dependencies]
