@@ -5,13 +5,15 @@ services:
     build: ./backend
     ports:
       - "8001:8000"
+    env_file:
+      - ./backend/.env
     environment:
-      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
       - IMAGE_API_URL=${IMAGE_API_URL:-}
       - STORAGE_DIR=/app/output
       - COMIC_OUTPUT_DIR=/app/output/comics
     volumes:
       - ./output:/app/output
+      - ./backend:/app
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
@@ -29,6 +31,7 @@ services:
         condition: service_healthy
     volumes:
       - ./output:/app/output:ro
+      - ./frontend:/app
 
 volumes:
   output: 

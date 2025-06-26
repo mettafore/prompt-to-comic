@@ -7,4 +7,5 @@ dependencies = [
     "streamlit",
     "httpx",
     "python-dotenv",
+    "requests>=2.32.4",
 ] 

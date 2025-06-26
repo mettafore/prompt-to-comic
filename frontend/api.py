@@ -5,7 +5,7 @@ import base64
 from typing import Dict, Any
 
 # Backend API configuration
-BACKEND_URL = "http://localhost:8000"
+BACKEND_URL = "http://backend:8000"
 
 def generate_comic(prompt: str, style: str, panels: int) -> Dict[str, Any]:
     """Send comic generation request to backend"""

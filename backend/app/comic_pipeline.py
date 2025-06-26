@@ -86,7 +86,7 @@ async def scene_parser(state: ComicState) -> ComicState:
     - style_notes: specific style requirements for {style}
     """
     
-    logger.debug(f"📝 scene_parser: Sending prompt to LLM: {scene_prompt[:100]}...")
+    logger.debug(f"📝 scene_parser: Sending prompt to LLM: {scene_prompt}...")
     
     try:
         scene_data = await llm_client.generate_structured(scene_prompt)
@@ -139,26 +139,65 @@ async def panel_planner(state: ComicState) -> ComicState:
     
     # Create prompt for panel planning
     panel_prompt = f"""
-    Create {panel_count} comic panel descriptions for this story:
+    Create exactly {panel_count} comic panel descriptions for this story:
     Original prompt: "{prompt}"
     Style: {style}
     Scene: {scene}
     
-    Each panel should advance the story. Return a JSON array of {panel_count} panel descriptions.
-    Each description should be detailed enough for image generation.
+    Each panel should advance the story. Return a JSON object with exactly {panel_count} panels:
+    {{
+        "panels": [
+            {{"panel_number": 1, "description": "Detailed description for panel 1"}},
+            {{"panel_number": 2, "description": "Detailed description for panel 2"}},
+            ...
+        ]
+    }}
+    
+    IMPORTANT: You must return exactly {panel_count} panels. Each description should be detailed enough for image generation.
     """
     
-    logger.debug(f"📝 panel_planner: Sending panel prompt to LLM: {panel_prompt[:100]}...")
+    logger.debug(f"📝 panel_planner: Sending panel prompt to LLM: {panel_prompt}...")
     
     try:
         panel_data = await llm_client.generate_structured(panel_prompt)
         logger.debug(f"✅ panel_planner: LLM response received: {panel_data}")
         
-        panel_descriptions = panel_data if isinstance(panel_data, list) else [str(panel_data)]
+        # Handle different response formats
+        panel_descriptions = []
+        
+        if isinstance(panel_data, list):
+            # Direct list of descriptions
+            panel_descriptions = [str(desc) for desc in panel_data]
+        elif isinstance(panel_data, dict):
+            # JSON object with panels array
+            if 'panels' in panel_data:
+                panels = panel_data['panels']
+                for panel in panels:
+                    if isinstance(panel, dict) and 'description' in panel:
+                        panel_descriptions.append(panel['description'])
+                    else:
+                        panel_descriptions.append(str(panel))
+            else:
+                # Try to extract descriptions from any key
+                for key, value in panel_data.items():
+                    if isinstance(value, str):
+                        panel_descriptions.append(value)
+                    elif isinstance(value, dict) and 'description' in value:
+                        panel_descriptions.append(value['description'])
+        elif isinstance(panel_data, str):
+            # Single string response
+            panel_descriptions = [panel_data]
+        else:
+            # Fallback: convert to string
+            panel_descriptions = [str(panel_data)]
+        
+        logger.debug(f"📝 panel_planner: Extracted {len(panel_descriptions)} panel descriptions: {panel_descriptions}")
         
         # Ensure we have the right number of panels
         while len(panel_descriptions) < panel_count:
-            panel_descriptions.append(f"Panel {len(panel_descriptions) + 1}: {scene.get('characters', [])} in {scene.get('setting', 'unknown')}")
+            fallback_desc = f"Panel {len(panel_descriptions) + 1}: {scene.get('characters', [])} in {scene.get('setting', 'unknown')}"
+            panel_descriptions.append(fallback_desc)
+            logger.debug(f"🔄 panel_planner: Added fallback panel: {fallback_desc}")
         
         panel_descriptions = panel_descriptions[:panel_count]
         logger.debug(f"📊 panel_planner: Final panel descriptions: {panel_descriptions}")

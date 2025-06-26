@@ -1,4 +1,8 @@
 import logging
+import os
+import base64
+from datetime import datetime
+from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 import asyncio
@@ -22,6 +26,42 @@ logger.debug("✅ main: Comic pipeline created")
 
 # In-memory job storage (replace with database in production)
 jobs = {}
+
+# Create output directory
+OUTPUT_DIR = Path("output/comics")
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+def save_comic_files(job_id: str, result: dict):
+    """Save comic files to disk"""
+    try:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        job_dir = OUTPUT_DIR / f"job_{job_id[:8]}_{timestamp}"
+        job_dir.mkdir(parents=True, exist_ok=True)
+        
+        logger.debug(f"💾 save_comic_files: Saving files to {job_dir}")
+        
+        # Save panel images
+        if "image_data" in result:
+            for i, img_b64 in enumerate(result["image_data"]):
+                img_data = base64.b64decode(img_b64)
+                panel_filename = job_dir / f"panel_{i+1}.png"
+                with open(panel_filename, 'wb') as f:
+                    f.write(img_data)
+                logger.debug(f"✅ Saved panel {i+1}: {panel_filename}")
+        
+        # Save final comic
+        if "comic_data" in result:
+            comic_data = base64.b64decode(result["comic_data"])
+            comic_filename = job_dir / "comic.png"
+            with open(comic_filename, 'wb') as f:
+                f.write(comic_data)
+            logger.debug(f"✅ Saved comic: {comic_filename}")
+        
+        return str(job_dir)
+        
+    except Exception as e:
+        logger.error(f"❌ save_comic_files: Failed to save files: {e}")
+        return None
 
 @app.post("/generate", response_model=GenerateResponse)
 async def generate_comic(req: GenerateRequest):
@@ -63,12 +103,18 @@ async def generate_comic(req: GenerateRequest):
         result = await comic_pipeline(pipeline_state)
         logger.debug(f"✅ generate_comic: Pipeline completed for job {job_id}")
         
+        # Save files to disk
+        saved_path = save_comic_files(job_id, result)
+        if saved_path:
+            logger.info(f"💾 generate_comic: Files saved to {saved_path}")
+        
         # Update job status
         jobs[job_id] = {
             "state": JobState.DONE.value,
             "request": req.dict(),
             "result": result,
-            "message": result.get("message", "Comic generated successfully")
+            "message": result.get("message", "Comic generated successfully"),
+            "files_path": saved_path
         }
         logger.debug(f"💾 generate_comic: Updated job {job_id} status to DONE")
         
@@ -137,7 +183,6 @@ def get_comic(job_id: str):
         raise HTTPException(status_code=404, detail="Comic data not found")
     
     # Decode base64 data
-    import base64
     comic_data = base64.b64decode(job["result"]["comic_data"])
     logger.debug(f"✅ get_comic: Returning comic data for job {job_id}, size: {len(comic_data)} bytes")
     
@@ -169,7 +214,6 @@ def get_panel(job_id: str, panel_number: int):
         raise HTTPException(status_code=404, detail="Panel number out of range")
     
     # Decode base64 data
-    import base64
     panel_data = base64.b64decode(panel_images[panel_number - 1])
     logger.debug(f"✅ get_panel: Returning panel {panel_number} for job {job_id}, size: {len(panel_data)} bytes")
     
@@ -181,7 +225,35 @@ def health():
     logger.debug("🔍 health: Health check requested")
     return HealthResponse(status="ok")
 
-# Add some metadata
+@app.get("/comics")
+def list_saved_comics():
+    """List all saved comics"""
+    logger.debug("🔍 list_saved_comics: Listing saved comics")
+    
+    try:
+        comics = []
+        if OUTPUT_DIR.exists():
+            for job_dir in OUTPUT_DIR.iterdir():
+                if job_dir.is_dir():
+                    comic_file = job_dir / "comic.png"
+                    if comic_file.exists():
+                        comics.append({
+                            "job_id": job_dir.name,
+                            "comic_path": str(comic_file),
+                            "panels": len(list(job_dir.glob("panel_*.png"))),
+                            "created": job_dir.stat().st_mtime
+                        })
+        
+        # Sort by creation time (newest first)
+        comics.sort(key=lambda x: x["created"], reverse=True)
+        
+        logger.debug(f"✅ list_saved_comics: Found {len(comics)} saved comics")
+        return {"comics": comics}
+        
+    except Exception as e:
+        logger.error(f"❌ list_saved_comics: Failed to list comics: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to list comics: {e}")
+
 @app.get("/")
 def root():
     logger.debug("🔍 root: Root endpoint requested")
@@ -189,5 +261,7 @@ def root():
         "message": "Prompt-to-Comic API",
         "version": "0.1.0",
         "docs": "/docs",
-        "pipeline": "LangGraph-based comic generation with real AI"
+        "pipeline": "LangGraph-based comic generation with real AI",
+        "saved_comics": f"/comics - List saved comics",
+        "output_dir": str(OUTPUT_DIR)
     } 
