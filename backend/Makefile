@@ -1,8 +1,12 @@
 test:
 	cd .. && uv run pytest backend/tests -v
 
+test-real-ai:
+	@echo "Testing real AI pipeline (requires OPENAI_API_KEY)"
+	uv run python test_real_ai.py
+
 run:
-	uv run uvicorn app.main:app --reload
+	uv run uvicorn app.main:app --reload --port 8001
 
 generate:
 	curl -X POST "http://localhost:8001/generate" \
