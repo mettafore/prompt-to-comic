@@ -1,0 +1,26 @@
+[project]
+name = "prompt-to-comic-backend"
+version = "0.1.0"
+description = "Backend for Prompt-to-Comic app"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi",
+    "uvicorn[standard]",
+    "langchain",
+    "langgraph",
+    "openai",
+    "pydantic",
+    "pydantic-settings",
+    "httpx",
+    "pillow",
+    "reportlab",
+    "python-multipart",
+    "python-dotenv",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-asyncio",
+    "httpx",
+] 
