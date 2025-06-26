@@ -27,7 +27,7 @@ Then visit: **http://localhost:8501** 🎉
 ![demo-preview](static/demo.jpeg)  
 👉 Try it with a prompt like:
 
-> "Two kids in a spaceship arguing about pineapple pizza while a robot watches."
+> "Pizza oven on fire. Chef becomes superman and extinguishes."
 
 ---
 
