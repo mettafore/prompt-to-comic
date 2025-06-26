@@ -1,16 +1,22 @@
 # 🎨 Prompt-to-Comic
 
-**Prompt-to-Comic** is an AI-powered app that turns a creative scene or idea into a visual comic strip. Built with LangGraph, GPT-4o, FastAPI, and DALL·E/SDXL, the system parses your prompt, breaks it into panels, generates art for each scene, and assembles it into a polished, downloadable comic.
+**Prompt-to-Comic** is an AI-powered app that turns a creative scene or idea into a visual comic strip. Built with LangGraph, GPT-4o, FastAPI, and DALL·E, the system parses your prompt, breaks it into panels, generates art for each scene, and assembles it into a polished, downloadable comic.
 
 ---
 
-## 🚀 Quick Start (One Command!)
+## 🚀 Quick Start
 
 ```bash
-# Clone and run with Docker (easiest way)
+# Clone the repository
 git clone https://github.com/yourusername/prompt-to-comic
 cd prompt-to-comic
-docker-compose up --build
+
+# Set up your OpenAI API key
+cp backend/env.example backend/.env
+# Edit backend/.env and add your OpenAI API key
+
+# Run with Docker
+docker-compose up -d
 ```
 
 Then visit: **http://localhost:8501** 🎉
@@ -18,7 +24,7 @@ Then visit: **http://localhost:8501** 🎉
 ---
 
 ## 📸 Demo
-![demo-preview](static/demo.gif)  
+![demo-preview](static/demo.jpeg)  
 👉 Try it with a prompt like:
 
 > "Two kids in a spaceship arguing about pineapple pizza while a robot watches."
@@ -31,9 +37,9 @@ Then visit: **http://localhost:8501** 🎉
 |-------|---------------|
 | 🧾 Scene Parsing | Break down prompt into characters, setting, actions |
 | 🎞️ Panel Planning | Split the scene into 2–6 visual panels |
-| 🖋️ Prompt Generation | Turn each panel into a DALL·E/SDXL prompt |
-| 🧠 AI Image Gen | Generate images via API |
-| 🖼️ Comic Layout | Arrange into a comic strip and export to PNG/PDF |
+| 🖋️ Prompt Generation | Turn each panel into a DALL·E prompt |
+| 🧠 AI Image Gen | Generate images via OpenAI API |
+| 🖼️ Comic Layout | Arrange into a comic strip and export to PNG |
 
 Built using **LangGraph**, each stage is a reusable, testable node in a directed graph.
 
@@ -45,36 +51,9 @@ Built using **LangGraph**, each stage is a reusable, testable node in a directed
 |--------------|-------------------------------------|
 | Backend      | **FastAPI**, LangGraph, OpenAI API |
 | Frontend     | **Streamlit**                       |
-| Image Models | DALL·E 3 / Replicate SDXL           |
-| Layout       | Pillow, ReportLab (PDFs)            |
-| Infra        | Docker, uv, HTTPX                   |
-
----
-
-## 🛠️ Setup Options
-
-### Option 1: Docker Compose (Recommended)
-```bash
-git clone https://github.com/yourusername/prompt-to-comic
-cd prompt-to-comic
-docker-compose up --build
-```
-
-### Option 2: Local Development
-```bash
-# Backend
-cd backend
-uv sync
-uv run uvicorn app.main:app --reload
-
-# Frontend (new terminal)
-cd frontend  
-uv sync
-uv run streamlit run app.py
-```
-
-### Option 3: Live Demo
-Visit: [your-railway-app.railway.app](https://your-railway-app.railway.app)
+| Image Models | DALL·E 3                            |
+| Layout       | Pillow                              |
+| Infra        | Docker, uv                          |
 
 ---
 
@@ -82,17 +61,17 @@ Visit: [your-railway-app.railway.app](https://your-railway-app.railway.app)
 
 1. Copy the example environment file:
    ```bash
-   cp .env.example .env
+   cp backend/env.example backend/.env
    ```
 
-2. Add your OpenAI API key:
+2. Edit `backend/.env` and add your OpenAI API key:
    ```env
    OPENAI_API_KEY=sk-your-key-here
    ```
 
-3. Restart the services:
+3. Start the services:
    ```bash
-   docker-compose down && docker-compose up --build
+   docker-compose up -d
    ```
 
 ---
@@ -115,27 +94,51 @@ Poll job status and result URL.
 ### `GET /health`
 Returns `{ "status": "ok" }`
 
+### `GET /comics`
+List all saved comics.
+
 ---
 
 ## 📦 Project Structure
 ```
 prompt-to-comic/
-├── app/               # FastAPI backend
-│   ├── main.py
-│   ├── config.py
-│   ├── schemas.py
-│   ├── graphs/
-│   │   ├── comic_graph.py
-│   │   └── nodes/
-│   └── utils/
+├── backend/           # FastAPI backend
+│   ├── app/
+│   │   ├── main.py
+│   │   ├── config.py
+│   │   ├── schemas.py
+│   │   ├── comic_pipeline.py
+│   │   └── utils/
+│   ├── Dockerfile
+│   └── .env
 ├── frontend/          # Streamlit frontend
 │   ├── app.py
 │   ├── api.py
-│   └── components/
-├── static/
+│   └── Dockerfile
+├── output/            # Generated comics (gitignored)
 ├── docker-compose.yml
-├── .env.example
 └── README.md
+```
+
+---
+
+## 🐳 Docker Commands
+
+```bash
+# Start services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Stop services
+docker-compose down
+
+# Rebuild and start
+docker-compose up -d --build
+
+# Check status
+docker-compose ps
 ```
 
 ---
@@ -171,7 +174,6 @@ MIT License
 ## 🙏 Acknowledgements
 - [LangGraph](https://github.com/langchain-ai/langgraph)
 - [OpenAI](https://openai.com)
-- [Replicate](https://replicate.com)
 - [Streamlit](https://streamlit.io)
 - Everyone building creative tools with AI 💛
 
